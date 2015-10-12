@@ -20,11 +20,17 @@ func initSeccomp() {
 		Value: 999,
 	}
 	setuid := seccomp.Syscall{
-		Value:  105,
+		Value:  syscall.SYS_SETUID,
+		Action: seccomp.Errno,
+		Args:   args,
+	}
+	setgid := seccomp.Syscall{
+		Value:  syscall.SYS_SETGID,
 		Action: seccomp.Errno,
 		Args:   args,
 	}
 	context.Add(&setuid)
+	context.Add(&setgid)
 	context.Load()
 }
 

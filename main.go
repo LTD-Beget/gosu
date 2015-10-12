@@ -9,7 +9,11 @@ import (
 )
 
 func init() {
-	initSeccomp()
+	// use seccomp if not root
+	if syscall.Geteuid() > 0 {
+		initSeccomp()
+	}
+
 	// make sure we only have one process and that it runs on the main thread (so that ideally, when we Exec, we keep our user switches and stuff)
 	runtime.GOMAXPROCS(1)
 	runtime.LockOSThread()
