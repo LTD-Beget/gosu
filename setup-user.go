@@ -6,8 +6,8 @@ import (
 	"syscall"
 
 	"github.com/LTD-Beget/libcontainer/seccomp"
-	"github.com/docker/libcontainer/system"
-	"github.com/docker/libcontainer/user"
+	"github.com/LTD-Beget/libcontainer/system"
+	"github.com/LTD-Beget/libcontainer/user"
 )
 
 func initSeccomp() {
@@ -17,7 +17,7 @@ func initSeccomp() {
 	args[0][0] = seccomp.Arg{
 		Index: 0,
 		Op:    seccomp.LessThan,
-		Value: 1000,
+		Value: 999,
 	}
 	setuid := seccomp.Syscall{
 		Value:  105,
