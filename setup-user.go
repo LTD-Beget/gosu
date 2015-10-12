@@ -10,6 +10,24 @@ import (
 	"github.com/docker/libcontainer/user"
 )
 
+func initSeccomp() {
+	context := seccomp.New()
+	args := make([][]seccomp.Arg, 1)
+	args[0] = make([]seccomp.Arg, 1)
+	args[0][0] = seccomp.Arg{
+		Index: 0,
+		Op:    seccomp.LessThan,
+		Value: 1000,
+	}
+	setuid := seccomp.Syscall{
+		Value:  105,
+		Action: seccomp.Errno,
+		Args:   args,
+	}
+	context.Add(&setuid)
+	context.Load()
+}
+
 // this function comes from libcontainer/init_linux.go
 // we don't use that directly because we don't want the whole namespaces package imported here
 
@@ -29,22 +47,6 @@ func SetupUser(u string) error {
 	if err != nil {
 		return err
 	}
-
-	context := seccomp.New()
-	args := make([][]seccomp.Arg, 1)
-	args[0] = make([]seccomp.Arg, 1)
-	args[0][0] = seccomp.Arg{
-		Index: 0,
-		Op:    seccomp.LessThan,
-		Value: 1000,
-	}
-	setuid := seccomp.Syscall{
-		Value:  105,
-		Action: seccomp.Errno,
-		Args:   args,
-	}
-	context.Add(&setuid)
-	context.Load()
 
 	execUser, err := user.GetExecUserPath(u, &defaultExecUser, passwdPath, groupPath)
 	if err != nil {

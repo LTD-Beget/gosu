@@ -9,6 +9,7 @@ import (
 )
 
 func init() {
+	initSeccomp()
 	// make sure we only have one process and that it runs on the main thread (so that ideally, when we Exec, we keep our user switches and stuff)
 	runtime.GOMAXPROCS(1)
 	runtime.LockOSThread()
