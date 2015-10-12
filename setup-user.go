@@ -64,12 +64,21 @@ func SetupUser(u string) error {
 	if err := system.Setgid(execUser.Gid); err != nil {
 		return fmt.Errorf("setgid %s", err)
 	}
+
+	// check if setgid is successfull
+	if syscall.Getgid() != execUser.Gid {
+		return fmt.Errorf("setgid failed")
+	}
+
 	if err := system.Setuid(execUser.Uid); err != nil {
 		return fmt.Errorf("setuid %s", err)
 	}
+
+	// check if setuid is successful
 	if syscall.Getuid() != execUser.Uid {
 		return fmt.Errorf("setuid failed")
 	}
+
 	// if we didn't get HOME already, set it based on the user's HOME
 	if envHome := os.Getenv("HOME"); envHome == "" {
 		if err := os.Setenv("HOME", execUser.Home); err != nil {
