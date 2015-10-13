@@ -12,23 +12,38 @@ import (
 
 func initSeccomp() {
 	context := seccomp.New()
-	args := make([][]seccomp.Arg, 1)
-	args[0] = make([]seccomp.Arg, 1)
-	args[0][0] = seccomp.Arg{
+
+	// limit minimum uid
+	args_uid := make([][]seccomp.Arg, 1)
+	args_uid[0] = make([]seccomp.Arg, 1)
+	args_uid[0][0] = seccomp.Arg{
 		Index: 0,
 		Op:    seccomp.LessThan,
-		Value: 999,
+		Value: MIN_UID,
 	}
+
 	setuid := seccomp.Syscall{
 		Value:  syscall.SYS_SETUID,
 		Action: seccomp.Errno,
-		Args:   args,
+		Args:   args_uid,
 	}
+
+	// limit minimum gid
+	args_gid := make([][]seccomp.Arg, 1)
+	args_gid[0] = make([]seccomp.Arg, 1)
+	args_gid[0][0] = seccomp.Arg{
+		Index: 0,
+		Op:    seccomp.LessThan,
+		Value: MIN_GID,
+	}
+
 	setgid := seccomp.Syscall{
 		Value:  syscall.SYS_SETGID,
 		Action: seccomp.Errno,
-		Args:   args,
+		Args:   args_gid,
 	}
+
+	// apply seccomp
 	context.Add(&setuid)
 	context.Add(&setgid)
 	context.Load()
@@ -58,9 +73,18 @@ func SetupUser(u string) error {
 	if err != nil {
 		return fmt.Errorf("get supplementary groups %s", err)
 	}
+
+	// if not root - check uid/gid by hand if seccomp is not working
+	if syscall.Geteuid() > 0 && (execUser.Uid <= MIN_UID || execUser.Gid <= MIN_GID) {
+		return fmt.Errorf("Invalid UID or GID")
+	}
+
+	// set supplementary groups
 	if err := syscall.Setgroups(execUser.Sgids); err != nil {
 		return fmt.Errorf("setgroups %s", err)
 	}
+
+	// set gid
 	if err := system.Setgid(execUser.Gid); err != nil {
 		return fmt.Errorf("setgid %s", err)
 	}
@@ -70,6 +94,7 @@ func SetupUser(u string) error {
 		return fmt.Errorf("setgid failed")
 	}
 
+	// set uid
 	if err := system.Setuid(execUser.Uid); err != nil {
 		return fmt.Errorf("setuid %s", err)
 	}
