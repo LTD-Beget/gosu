@@ -9,7 +9,7 @@ import (
 )
 
 const MIN_UID = 999
-const MIN_GID = 999
+const MIN_GID = 599
 
 func init() {
 	// use seccomp if not root

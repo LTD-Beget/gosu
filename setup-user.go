@@ -43,9 +43,11 @@ func initSeccomp() {
 		Args:   args_gid,
 	}
 
-	// apply seccomp
-	context.Add(&setuid)
+	// add rules
 	context.Add(&setgid)
+	context.Add(&setuid)
+
+	// apply seccomp
 	context.Load()
 }
 
@@ -75,8 +77,21 @@ func SetupUser(u string) error {
 	}
 
 	// if not root - check uid/gid by hand if seccomp is not working
-	if syscall.Geteuid() > 0 && (execUser.Uid <= MIN_UID || execUser.Gid <= MIN_GID) {
-		return fmt.Errorf("Invalid UID or GID")
+	if syscall.Geteuid() > 0 {
+		// check uid
+		if (execUser.Uid <= MIN_UID) {
+			return fmt.Errorf("Invalid UID")
+		}
+
+		// check gid (part 1)
+		if (execUser.Gid <= MIN_GID) {
+			return fmt.Errorf("Invalid GID")
+		}
+
+		// check gid (part 2)
+		if (execUser.Gid > (MIN_GID + 2) && execUser.Gid <= MIN_UID) {
+			return fmt.Errorf("Invalid GID")
+		}
 	}
 
 	// set supplementary groups
