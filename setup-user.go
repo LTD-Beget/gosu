@@ -125,5 +125,11 @@ func SetupUser(u string) error {
 			return fmt.Errorf("set HOME %s", err)
 		}
 	}
+
+	// set USER variable to user's name if name exists
+	if User, err := user.CurrentUser(); err == nil {
+		os.Setenv("USER", User.Name)
+	}
+
 	return nil
 }
