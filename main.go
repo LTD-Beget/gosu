@@ -48,6 +48,9 @@ func main() {
 		log.Fatalf("error: %v", err)
 	}
 
+	// change dir to HOME dir
+	os.Chdir(os.Getenv("HOME"))
+
 	if err = syscall.Exec(name, os.Args[2:], os.Environ()); err != nil {
 		log.Fatalf("error: exec failed: %v", err)
 	}
