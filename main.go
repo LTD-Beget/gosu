@@ -6,10 +6,13 @@ import (
 	"os/exec"
 	"runtime"
 	"syscall"
+	"flag"
 )
 
-const MIN_UID = 999
-const MIN_GID = 599
+const (
+	MIN_UID = 999
+	MIN_GID = 599
+)
 
 func init() {
 	// use seccomp if not root
@@ -25,7 +28,14 @@ func init() {
 func main() {
 	log.SetFlags(0) // no timestamps on our logs
 
-	if len(os.Args) <= 2 {
+	var changeDir string
+
+	flag.StringVar(&changeDir, "chdir", "", "Change dir after setuid")
+	flag.Parse()
+
+	args := flag.Args()
+
+	if len(args) < 2 {
 		log.Printf("Usage: %s user-spec command [args]", os.Args[0])
 		log.Printf("   ie: %s tianon bash", os.Args[0])
 		log.Printf("       %s nobody:root bash -c 'whoami && id'", os.Args[0])
@@ -39,19 +49,28 @@ func main() {
 	// clear HOME so that SetupUser will set it
 	os.Setenv("HOME", "")
 
-	if err := SetupUser(os.Args[1]); err != nil {
-		log.Fatalf("error: failed switching to %q: %v", os.Args[1], err)
+	// setup user
+	if err := SetupUser(args[0]); err != nil {
+		log.Fatalf("error: failed switching to %q: %v", args[0], err)
 	}
 
-	name, err := exec.LookPath(os.Args[2])
+	// search executable
+	name, err := exec.LookPath(args[1])
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}
 
-	// change dir to HOME dir
-	os.Chdir(os.Getenv("HOME"))
+	// change dir before exec
+	if changeDir == "" {
+		changeDir = os.Getenv("HOME")
+	}
 
-	if err = syscall.Exec(name, os.Args[2:], os.Environ()); err != nil {
+	if (changeDir != "") {
+		os.Chdir(changeDir)
+	}
+
+	// call execve
+	if err = syscall.Exec(name, args[1:], os.Environ()); err != nil {
 		log.Fatalf("error: exec failed: %v", err)
 	}
 }
